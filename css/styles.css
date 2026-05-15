@@ -313,6 +313,25 @@ a { text-decoration: none; }
 }
 
 
+/* Fade suave en la parte inferior del hero — elimina el flash blanco
+   al hacer la transición hacia la sección de productos */
+.hero__bottom-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28vh;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(253, 252, 248, 0.5) 55%,
+    rgba(253, 252, 248, 0.92) 80%,
+    #FDFCF8 100%
+  );
+  pointer-events: none;
+  z-index: 6;
+}
+
 /* Barra de progreso de carga de frames */
 .hero__loader {
   position: absolute;
