@@ -33,6 +33,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initSparkles();
 
+  /* ── Detener animación del hint al primer scroll ── */
+  const hint = document.getElementById('scrollHint');
+  if (hint) {
+    window.addEventListener('scroll', () => {
+      hint.classList.add('stop');
+    }, { passive: true, once: true });
+  }
+
 });
 
 /* ──────────────────────────────────────────────────────────────
