@@ -155,8 +155,8 @@ const Scrubber = (() => {
       });
 
       gsap.to('#heroContent', {
-        opacity: 0, y: -50, ease: 'power2.in',
-        scrollTrigger: { trigger: '#hero', start: 'top top', end: '22% top', scrub: true },
+        opacity: 0, y: -40, ease: 'power2.in',
+        scrollTrigger: { trigger: '#hero', start: '2% top', end: '10% top', scrub: true },
       });
 
       // Fade gradual desde el comienzo del scroll hasta el 55%
