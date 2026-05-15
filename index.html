@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Catálogo exclusivo Disney On Ice — Accesorios artesanales con luces LED para el show en el Movistar Arena.">
+  <meta name="theme-color" content="#FDFCF8">
+
+  <!-- Open Graph (para vista previa al compartir por WhatsApp) -->
+  <meta property="og:title"       content="Disney On Ice · Colección Exclusiva ✨">
+  <meta property="og:description" content="Accesorios artesanales con luces LED para el show más mágico del año.">
+  <meta property="og:type"        content="website">
+
+  <title>Disney On Ice · Catálogo Exclusivo ✨</title>
+
+  <!-- ─── FUENTES GOOGLE ───────────────────────────────────────
+       Cormorant Garamond: titulares elegantes, estilo Disney
+       DM Sans:            cuerpo limpio y moderno
+       Dancing Script:     toques mágicos/caligráficos
+  ─────────────────────────────────────────────────────────── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Dancing+Script:wght@500;600&display=swap"
+    rel="stylesheet"
+  >
+
+  <!-- ─── GSAP + ScrollTrigger (CDN) ─────────────────────────
+       Usado para la animación del scrubbing y fade del hero.
+       Si querés removerlo: el scrubber tiene un fallback nativo.
+  ─────────────────────────────────────────────────────────── -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════
+       HEADER FIJO
+  ════════════════════════════════════════════════════════ -->
+  <header class="header" id="header">
+    <div class="header__inner">
+
+      <div class="header__brand">
+        <span class="header__sparkle" aria-hidden="true">✦</span>
+        <span>Disney On Ice</span>
+      </div>
+
+      <!-- Botón principal de WhatsApp -->
+      <a
+        href="https://wa.me/+5491123949704?text=Hola!%20Vi%20tu%20catálogo%20y%20quiero%20hacer%20un%20pedido%20✨"
+        class="btn-wa"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Volver al chat de WhatsApp"
+      >
+        <!-- WhatsApp icon -->
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+          <path d="M12 0C5.373 0 0 5.373 0 12c0 2.118.549 4.107 1.51 5.845L.057 23.617a.75.75 0 00.916.927l5.92-1.548A11.934 11.934 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75c-1.89 0-3.658-.494-5.19-1.36l-.373-.214-3.872 1.013 1.03-3.758-.237-.386A9.718 9.718 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
+        </svg>
+        Volver al WhatsApp
+      </a>
+
+    </div>
+  </header>
+
+
+  <!-- ═══════════════════════════════════════════════════════
+       HERO — IMAGE SEQUENCE SCRUBBING
+
+       Esta sección tiene height: 300vh.
+       El inner (.hero__sticky) es sticky y ocupa 100vh.
+       Al hacer scroll, el canvas renderiza frames en secuencia
+       dando la ilusión de rotación del producto (estilo Apple).
+
+       ┌─ Cómo cambiar los frames ───────────────────────────┐
+       │  Editá CONFIG.FRAMES en js/config.js:               │
+       │  · firstFrame: número del primer archivo            │
+       │  · lastFrame:  número del último archivo            │
+       │  · folder:     carpeta (espacios como %20)          │
+       └─────────────────────────────────────────────────────┘
+  ════════════════════════════════════════════════════════ -->
+  <section class="hero" id="hero" aria-label="Presentación del producto principal">
+
+    <div class="hero__sticky">
+
+      <!-- Canvas donde se dibuja la secuencia de frames -->
+      <canvas class="hero__canvas" id="heroCanvas" aria-hidden="true"></canvas>
+
+      <!-- Canvas de partículas mágicas (sparkles) -->
+      <canvas
+        id="sparklesCanvas"
+        style="position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;"
+        aria-hidden="true"
+      ></canvas>
+
+      <!-- Vignette de bordes suaves -->
+      <div class="hero__vignette" aria-hidden="true"></div>
+
+      <!-- Texto principal -->
+      <div class="hero__content" id="heroContent">
+        <p class="hero__eyebrow">Colección Exclusiva · Movistar Arena</p>
+        <h1 class="hero__title">
+          Disney<br>
+          <em>On Ice</em>
+        </h1>
+        <p class="hero__subtitle">
+          Accesorios artesanales con luces LED<br>
+          para el show más mágico del año ✨
+        </p>
+      </div>
+
+      <!-- Indicador de scroll -->
+      <div class="hero__scroll-hint" id="scrollHint" aria-hidden="true">
+        <span>Deslizá para descubrir</span>
+        <div class="hero__scroll-line"></div>
+      </div>
+
+      <!-- Barra de progreso de precarga de frames -->
+      <div class="hero__loader" id="heroLoader" aria-hidden="true"></div>
+
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECCIÓN PRODUCTOS
+
+       Las tarjetas se generan dinámicamente desde
+       CONFIG.PRODUCTS en js/config.js.
+       Para agregar/quitar productos: editá ese array.
+  ════════════════════════════════════════════════════════ -->
+  <main>
+    <section class="products" id="products" aria-label="Catálogo de productos">
+
+      <header class="products__header">
+        <p class="products__eyebrow">Catálogo Exclusivo</p>
+        <h2 class="products__title">Nuestra Colección</h2>
+        <p class="products__subtitle">✦ Luces LED · Batería reemplazable · Impresión 3D artesanal ✦</p>
+      </header>
+
+      <!-- Las tarjetas de productos se inyectan aquí por JS -->
+      <div class="products__grid" id="productsGrid" role="list"></div>
+
+    </section>
+  </main>
+
+
+  <!-- ═══════════════════════════════════════════════════════
+       FOOTER
+  ════════════════════════════════════════════════════════ -->
+  <footer class="footer" aria-label="Pie de página">
+    <div class="footer__inner">
+      <p class="footer__brand">✦ Disney On Ice · Colección Exclusiva</p>
+      <p class="footer__tagline">Hecho con amor · Impresión 3D artesanal · Argentina 🇦🇷</p>
+
+      <a
+        href="https://wa.me/+5491123949704?text=Hola!%20Quiero%20hacer%20un%20pedido%20del%20catálogo%20Disney%20On%20Ice%20✨"
+        class="footer__cta"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+          <path d="M12 0C5.373 0 0 5.373 0 12c0 2.118.549 4.107 1.51 5.845L.057 23.617a.75.75 0 00.916.927l5.92-1.548A11.934 11.934 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75c-1.89 0-3.658-.494-5.19-1.36l-.373-.214-3.872 1.013 1.03-3.758-.237-.386A9.718 9.718 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
+        </svg>
+        Hacer mi pedido por WhatsApp
+      </a>
+    </div>
+  </footer>
+
+
+  <!-- ═══════════════════════════════════════════════════════
+       LIGHTBOX (overlay de imagen ampliada)
+       Generado estáticamente; JS lo rellena con contenido
+       dinámico al hacer click en cualquier imagen de producto.
+  ════════════════════════════════════════════════════════ -->
+
+  <!-- Fondo oscuro del lightbox -->
+  <div class="lb-overlay" id="lbOverlay" aria-hidden="true"></div>
+
+  <!-- Contenedor del lightbox -->
+  <div
+    class="lb"
+    id="lb"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Vista ampliada del producto"
+  >
+    <button class="lb__close" id="lbClose" aria-label="Cerrar vista ampliada">✕</button>
+
+    <button class="lb__nav lb__nav--prev" id="lbPrev" aria-label="Imagen anterior">‹</button>
+    <button class="lb__nav lb__nav--next" id="lbNext" aria-label="Imagen siguiente">›</button>
+
+    <div class="lb__img-wrap">
+      <img class="lb__img" id="lbImg" src="" alt="Vista ampliada del producto">
+    </div>
+
+    <div class="lb__dots" id="lbDots" role="tablist" aria-label="Navegar entre imágenes"></div>
+  </div>
+
+
+  <!-- ─── SCRIPTS ────────────────────────────────────────────
+       Orden importante:
+       1. config.js   → constantes y datos (sin dependencias)
+       2. scrubber.js → usa CONFIG
+       3. products.js → usa CONFIG
+       4. main.js     → inicializa todo, usa Scrubber y Products
+  ─────────────────────────────────────────────────────────── -->
+  <script src="js/config.js"></script>
+  <script src="js/scrubber.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+</html>
