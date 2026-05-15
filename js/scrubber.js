@@ -159,9 +159,10 @@ const Scrubber = (() => {
         scrollTrigger: { trigger: '#hero', start: 'top top', end: '22% top', scrub: true },
       });
 
+      // Fade gradual desde el comienzo del scroll hasta el 55%
       gsap.to('#scrollHint', {
         opacity: 0,
-        scrollTrigger: { trigger: '#hero', start: '75% top', end: '90% top', scrub: true },
+        scrollTrigger: { trigger: '#hero', start: '4% top', end: '55% top', scrub: true },
       });
 
     } else {
@@ -177,14 +178,10 @@ const Scrubber = (() => {
     }
   }
 
-  /* ── Actualizar el indicador de scroll según progreso ──
-     - La línea se llena proporcionalmente al scroll
-     - Pasado el 80%, aparece el mensaje "¡Ya casi!" */
+  /* ── Actualizar la barra de progreso del scroll hint ── */
   function updateScrollHint(progress) {
-    const line   = document.getElementById('scrollLine');
-    const almost = document.getElementById('scrollAlmost');
-    if (line)   line.style.setProperty('--fill', `${Math.min(progress, 0.95) * 100}%`);
-    if (almost) almost.classList.toggle('visible', progress > 0.78);
+    const line = document.getElementById('scrollLine');
+    if (line) line.style.setProperty('--fill', `${Math.min(progress, 0.98) * 100}%`);
   }
 
   return { init, setProgress };
