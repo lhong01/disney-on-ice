@@ -113,10 +113,15 @@
         </p>
       </div>
 
-      <!-- Indicador de scroll -->
+      <!-- Indicador de scroll con barra de progreso -->
       <div class="hero__scroll-hint" id="scrollHint" aria-hidden="true">
         <span>Deslizá para descubrir</span>
-        <div class="hero__scroll-line"></div>
+        <div class="hero__scroll-line" id="scrollLine"></div>
+        <!-- Aparece cuando ya falta poco para llegar a los productos -->
+        <div class="hero__almost" id="scrollAlmost">
+          <span>¡Ya llegaste!</span>
+          <div class="hero__almost-arrow">↓</div>
+        </div>
       </div>
 
       <!-- Barra de progreso de precarga de frames -->
@@ -139,7 +144,10 @@
       <header class="products__header">
         <p class="products__eyebrow">Catálogo Exclusivo</p>
         <h2 class="products__title">Nuestra Colección</h2>
-        <p class="products__subtitle">✦ Luces LED · Batería reemplazable · Impresión 3D artesanal ✦</p>
+        <p class="products__subtitle">✦ Luces LED · Pila reemplazable ✦</p>
+        <div class="products__wholesale-note">
+          💼 Precios exclusivos para revendedoras
+        </div>
       </header>
 
       <!-- Las tarjetas de productos se inyectan aquí por JS -->

@@ -72,9 +72,6 @@ const Products = (() => {
       ? `<div class="product-card__badge">${product.badge}</div>`
       : '';
 
-    // Margen de ganancia
-    const margin    = product.priceRetail - product.priceWhole;
-
     card.innerHTML = `
       <div
         class="product-card__gallery"
@@ -93,12 +90,11 @@ const Products = (() => {
 
         <div class="product-card__prices">
           <div class="product-card__price-main">
-            <span class="product-card__price-label">Tu precio</span>
+            <span class="product-card__price-label">Precio mayorista</span>
             <span class="product-card__price-value">${fmtPrice(product.priceWhole)}</span>
           </div>
           <p class="product-card__price-retail">
             PVP sugerido: <strong>${fmtPrice(product.priceRetail)}</strong>
-            &nbsp;· Ganás <strong>${fmtPrice(margin)}</strong>
           </p>
         </div>
 

@@ -1,28 +1,23 @@
 /* =============================================================
-   IMAGE SEQUENCE SCRUBBER
-   Animación estilo Apple — el scroll controla el frame activo.
-   Renderiza en <canvas> con interpolación suave y RAF.
+   IMAGE SEQUENCE SCRUBBER — v2
+   Fixes: DPR bug en móvil (canvas left-aligned), frame blending
+   para suavizar transiciones con pocas fotos.
    ============================================================= */
 
 const Scrubber = (() => {
 
-  /* ── Estado interno ── */
-  let frames      = [];   // Array de objetos Image precargados
-  let loadedCount = 0;    // Cuántos frames ya cargaron
+  let frames      = [];
+  let loadedCount = 0;
   let totalFrames = 0;
-  let currentF    = 0;   // Frame actual (decimal, para interpolación)
-  let targetF     = 0;   // Frame objetivo según scroll
-  let rafId       = null;
+  let currentF    = 0;    // frame actual (decimal)
+  let targetF     = 0;    // frame objetivo según scroll
+  let cssW        = 0;    // ancho CSS del canvas (para drawFrame)
+  let cssH        = 0;    // alto CSS del canvas
   let canvas      = null;
   let ctx         = null;
   let loaderEl    = null;
 
-  /* ──────────────────────────────────────────────────────────
-     PRECARGA DE FRAMES
-
-     Carga todas las imágenes antes de que el usuario scrollee.
-     onProgress(0→1) se llama por cada imagen que termina de cargar.
-  ────────────────────────────────────────────────────────── */
+  /* ── Precarga ── */
   function preload(baseUrl, cfg, onProgress) {
     const { firstFrame, lastFrame, folder, ext } = cfg;
     totalFrames = lastFrame - firstFrame + 1;
@@ -31,183 +26,165 @@ const Scrubber = (() => {
     for (let i = 0; i < totalFrames; i++) {
       const num = firstFrame + i;
       const img = new Image();
-
       img.onload = () => {
         loadedCount++;
-        onProgress && onProgress(loadedCount / totalFrames);
-        if (i === 0) drawFrame(0); // Mostrar primer frame apenas cargue
+        onProgress?.(loadedCount / totalFrames);
+        if (i === 0) drawFrame(0);
       };
-
       img.onerror = () => {
         loadedCount++;
-        onProgress && onProgress(loadedCount / totalFrames);
+        onProgress?.(loadedCount / totalFrames);
         console.warn(`[Scrubber] No se pudo cargar: ${img.src}`);
       };
-
       img.src = `${baseUrl}${folder}${num}.${ext}`;
       frames[i] = img;
     }
   }
 
-  /* ──────────────────────────────────────────────────────────
-     DIBUJAR FRAME EN CANVAS
-
-     Dibuja el frame `index` centrado y contenido en el canvas
-     (equivalent a object-fit: contain).
-  ────────────────────────────────────────────────────────── */
-  function drawFrame(index) {
-    if (!ctx || !canvas || totalFrames === 0) return;
-
-    const fi  = Math.max(0, Math.min(totalFrames - 1, Math.round(index)));
-    const img = frames[fi];
-
-    if (!img || !img.complete || !img.naturalWidth) return;
-
-    const cw = canvas.width  / (window.devicePixelRatio || 1);
-    const ch = canvas.height / (window.devicePixelRatio || 1);
-
-    // Calcular dimensiones manteniendo proporción (contain)
-    const iRatio = img.naturalWidth / img.naturalHeight;
-    const cRatio = cw / ch;
+  /* ── Dibujar una imagen centrada (contain) en el canvas ── */
+  function drawImg(img) {
+    if (!img?.complete || !img.naturalWidth) return;
+    const iR = img.naturalWidth / img.naturalHeight;
+    const cR = cssW / cssH;
     let dw, dh;
-
-    if (iRatio > cRatio) {
-      dw = cw;
-      dh = cw / iRatio;
-    } else {
-      dh = ch;
-      dw = ch * iRatio;
-    }
-
-    const dx = (cw - dw) / 2;
-    const dy = (ch - dh) / 2;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, dx, dy, dw, dh);
+    if (iR > cR) { dw = cssW; dh = cssW / iR; }
+    else          { dh = cssH; dw = cssH * iR; }
+    ctx.drawImage(img, (cssW - dw) / 2, (cssH - dh) / 2, dw, dh);
   }
 
-  /* ──────────────────────────────────────────────────────────
-     LOOP DE ANIMACIÓN
+  /* ── Dibujar frame con BLENDING entre frames adyacentes ──
+     Con pocas fotos, interpolar entre f1 y f2 crea frames
+     "virtuales" que suavizan el salto visual enormemente. */
+  function drawFrame(index) {
+    if (!ctx || !cssW || totalFrames === 0) return;
 
-     Usa lerp (interpolación lineal) para que el frame
-     se mueva suavemente hacia el objetivo. Se ejecuta con RAF
-     solo cuando hay diferencia visible.
-  ────────────────────────────────────────────────────────── */
+    const clamped = Math.max(0, Math.min(totalFrames - 1, index));
+    const f1      = Math.floor(clamped);
+    const f2      = Math.min(totalFrames - 1, f1 + 1);
+    const blend   = clamped - f1; // 0.0 → 1.0
+
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    // Frame base
+    ctx.globalAlpha = 1;
+    drawImg(frames[f1]);
+
+    // Frame siguiente blended encima
+    if (blend > 0.01 && f1 !== f2 && frames[f2]) {
+      ctx.globalAlpha = blend;
+      drawImg(frames[f2]);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /* ── Loop RAF con interpolación suave (lerp) ── */
   function animLoop() {
-    const EASE = 0.10; // Velocidad de interpolación. Más bajo = más suave.
-
-    const prevF = currentF;
+    const EASE = 0.09;
+    const prev = currentF;
     currentF += (targetF - currentF) * EASE;
-
-    // Solo redibujar si el cambio es perceptible
-    if (Math.abs(currentF - prevF) > 0.005) {
-      drawFrame(currentF);
-    }
-
-    rafId = requestAnimationFrame(animLoop);
+    if (Math.abs(currentF - prev) > 0.003) drawFrame(currentF);
+    requestAnimationFrame(animLoop);
   }
 
-  /* ──────────────────────────────────────────────────────────
-     ACTUALIZAR FRAME OBJETIVO
-     progress: número entre 0 y 1
-  ────────────────────────────────────────────────────────── */
   function setProgress(progress) {
     targetF = Math.max(0, Math.min(1, progress)) * (totalFrames - 1);
   }
 
-  /* ──────────────────────────────────────────────────────────
-     ADAPTAR CANVAS AL TAMAÑO DEL CONTENEDOR
-
-     Limita el DPR a 2x para no saturar GPU en pantallas 3x.
-  ────────────────────────────────────────────────────────── */
+  /* ── Resize: FIX — guardar cssW/cssH y usar setTransform ──
+     El bug anterior: canvas.width / devicePixelRatio era incorrecto
+     cuando el DPR real (ej: 3) difería del DPR usado (clamped a 2).
+     Ahora se usan las dimensiones CSS directamente. */
   function resizeCanvas() {
     if (!canvas) return;
     const dpr  = Math.min(window.devicePixelRatio || 1, 2);
     const rect = canvas.parentElement.getBoundingClientRect();
-    canvas.width  = rect.width  * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-    canvas.style.width  = rect.width  + 'px';
-    canvas.style.height = rect.height + 'px';
+
+    // Fallback a window dimensions si el rect aún no está calculado
+    cssW = rect.width  || window.innerWidth;
+    cssH = rect.height || window.innerHeight;
+
+    canvas.width  = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.width  = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+
+    // setTransform es atómico: reset + scale en un paso (evita acumulación)
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
     drawFrame(currentF);
   }
 
-  /* ──────────────────────────────────────────────────────────
-     INICIALIZACIÓN
-  ────────────────────────────────────────────────────────── */
+  /* ── Init ── */
   function init() {
     canvas   = document.getElementById('heroCanvas');
     loaderEl = document.getElementById('heroLoader');
     if (!canvas) return;
 
     ctx = canvas.getContext('2d', { alpha: true });
-    resizeCanvas();
 
-    // Redimensionar canvas cuando cambie el viewport
+    // Primer resize tras un tick (asegura que el DOM esté pintado)
+    requestAnimationFrame(resizeCanvas);
+
     let resizeTimer;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(resizeCanvas, 150);
     }, { passive: true });
 
-    // Precargar frames y actualizar barra de progreso
     preload(CONFIG.BASE_URL, CONFIG.FRAMES, (progress) => {
       if (loaderEl) loaderEl.style.width = (progress * 100) + '%';
       if (progress >= 1 && loaderEl) {
-        setTimeout(() => { loaderEl.style.opacity = '0'; }, 400);
+        setTimeout(() => { loaderEl.style.opacity = '0'; }, 500);
       }
     });
 
-    // Iniciar loop de animación
     animLoop();
 
-    // ── ScrollTrigger de GSAP (preferido) ──
     if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
       gsap.registerPlugin(ScrollTrigger);
 
-      // El scroll de la sección hero controla el frame
       ScrollTrigger.create({
         trigger:  '#hero',
         start:    'top top',
         end:      'bottom bottom',
-        scrub:    true,          // scrub:true = sincronizado 1:1 con el scroll
-        onUpdate: (self) => setProgress(self.progress),
-      });
-
-      // El texto del hero se desvanece al comenzar el scroll
-      gsap.to('#heroContent', {
-        opacity:  0,
-        y:        -50,
-        ease:     'power2.in',
-        scrollTrigger: {
-          trigger: '#hero',
-          start:   'top top',
-          end:     '22% top',
-          scrub:   true,
+        scrub:    true,
+        onUpdate: (self) => {
+          setProgress(self.progress);
+          updateScrollHint(self.progress);
         },
       });
 
-      // El hint de scroll desaparece pronto
+      gsap.to('#heroContent', {
+        opacity: 0, y: -50, ease: 'power2.in',
+        scrollTrigger: { trigger: '#hero', start: 'top top', end: '22% top', scrub: true },
+      });
+
       gsap.to('#scrollHint', {
         opacity: 0,
-        scrollTrigger: {
-          trigger: '#hero',
-          start:   'top top',
-          end:     '8% top',
-          scrub:   true,
-        },
+        scrollTrigger: { trigger: '#hero', start: '75% top', end: '90% top', scrub: true },
       });
 
     } else {
-      // ── Fallback sin GSAP: scroll nativo ──
       const heroEl = document.getElementById('hero');
       window.addEventListener('scroll', () => {
         const rect     = heroEl.getBoundingClientRect();
         const scrolled = -rect.top;
         const total    = heroEl.offsetHeight - window.innerHeight;
-        setProgress(Math.max(0, Math.min(1, scrolled / total)));
+        const p        = Math.max(0, Math.min(1, scrolled / total));
+        setProgress(p);
+        updateScrollHint(p);
       }, { passive: true });
     }
+  }
+
+  /* ── Actualizar el indicador de scroll según progreso ──
+     - La línea se llena proporcionalmente al scroll
+     - Pasado el 80%, aparece el mensaje "¡Ya casi!" */
+  function updateScrollHint(progress) {
+    const line   = document.getElementById('scrollLine');
+    const almost = document.getElementById('scrollAlmost');
+    if (line)   line.style.setProperty('--fill', `${Math.min(progress, 0.95) * 100}%`);
+    if (almost) almost.classList.toggle('visible', progress > 0.78);
   }
 
   return { init, setProgress };
