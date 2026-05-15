@@ -227,12 +227,12 @@ a { text-decoration: none; }
   inset: -55% -45%;
   background: radial-gradient(
     ellipse 70% 65% at 50% 50%,
-    rgba(253, 252, 248, 0.82) 0%,
-    rgba(253, 252, 248, 0.55) 35%,
-    rgba(237, 234, 227, 0.22) 60%,
-    transparent 80%
+    rgba(253, 252, 248, 0.48) 0%,
+    rgba(253, 252, 248, 0.28) 40%,
+    rgba(237, 234, 227, 0.08) 65%,
+    transparent 82%
   );
-  filter: blur(6px);
+  filter: blur(8px);
   z-index: -1;
   pointer-events: none;
 }
